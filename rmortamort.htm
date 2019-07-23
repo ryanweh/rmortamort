@@ -1,0 +1,597 @@
+<!doctype html>
+<html>
+<head>
+	<script src="./d3/d3.js"></script>
+	<script src="./data/amortdata.json"></script>
+	<style>
+		.line {
+			fill:none;
+			stroke-width:1px;
+		}		
+		table.t1 {
+		
+			font-size: 12px;
+			margin: 1em auto;
+			border: 1px solid #70b0e0;
+			border-collapse: collapse;
+			font-family: Arial, Helvetica, sans-serif;
+		}
+		.t1 th, .t1 td {
+			padding: 4px 8px;
+		}
+		.t1 thead th {
+			background: #959095;
+			text-align: left;
+			font-size: 12px;
+			color: #fff;
+		}
+		.t1 td{
+			border-right: 1px solid #90b0e0;
+		}
+		.t1 tbody tr {
+			border-bottom: 1px solid #90b0e0;
+		}
+		.t1 tbody tr:nth-child(odd) {
+			background: #d5e5e8;
+		}
+		.t1 tfoot th {
+			background: #6580b5;
+			text-align: left;
+			font-weight: normal;
+			font-size: 10px;
+			color: #fff;
+		}
+		.t1 tr *:nth-child(3), .t1 tr *:nth-child(4) {
+			text-align: right;
+		}
+
+		.wrapper {
+		}
+		.leftcol {
+			width:425px;
+			float:left;
+		}
+		.rightcol {
+			margin-left:450px;
+		}
+	</style>
+</head>
+<body>
+<h2>Reverse Mortgage Amortization</h2>
+<hr />
+<div class="wrapper">
+	<div class="leftcol">
+		<!-- Graph will go here -->
+		<div id="graph" ></div>
+		
+		<div id="initialvals" style="margin-left:55px;">
+			<form>
+				<!--todo: generate this dynamically in d3 script -->
+				<strong>Initial Values</strong><br />
+				<hr />
+				<table>
+				<tbody>
+					<tr>
+						<td>
+							Number of Years:
+						</td><td>
+							<input class="fields" id="numYears" type="float"/>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							Initial Interest Rate: 
+						</td><td>
+							<input class="fields" id="initInterestRate" type="float"/>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							Max Claim Amount:
+						</td>
+						<td>
+							<input class="fields" id="maxClaimAmount" type="float"/>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							Cash Due from Borrower:
+						</td>
+						<td>
+							<input class="fields" id="cashDueFromBorrower" type="float"/>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							Lien Payoffs w/RMortgage:
+						</td>
+						<td>
+							<input class="fields" id="lienPayoffsWRM" type="float"/><br />
+						</td>
+					</tr>
+
+					<tr>
+						<td>
+							Financed Closing Costs:
+						</td>
+						<td>
+							<input class="fields" id="financedClosingCosts" type="float"/>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							Initial Property Value:
+						</td>
+						<td>
+							<input class="fields" id="initPropValue" type="float"/>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							Expected Appreciation:
+						</td>
+						<td>
+							<input class="fields" id="expectedAppreciation" type="float"/>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							Initial Line of Credit:
+						</td>
+						<td>
+							<input class="fields" id="initLineOfCredit" type="float"/>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							Mortgage Insurance Rate: 
+						</td>
+						<td>
+							<input class="fields" id="mortgageInsurance" type="float"/>
+						</td>
+					</tr>
+					</tbody>
+				</table>
+				<div style="margin-left:185px;" >
+					<input type="submit" onclick="myFunction(); return false;"/>
+				</div>
+			</form>
+	</div>
+	
+	<script>
+	var initialData = {
+		  numYears:{desc:"Number of Years", val:40}
+		, initInterestRate:{desc:"Interest Rate", val:4.0000}
+		, maxClaimAmount:{desc:"Max claim amount", val:200000.00}
+		, cashDueFromBorrower:{desc:"Cash Due From Borrower", val:30000.00}
+		, lienPayoffsWRM:{desc:"Lien Payoffs w/Reverse Mort.", val:400000.00}
+		, financedClosingCosts:{desc:"Financed Closing Costs", val:25000.25}
+		, initPropValue:{desc:"Initial Property Value", val:800000.00}
+		, expectedAppreciation:{desc:"Expected Appreciation", val:3.0}
+		, initLineOfCredit:{desc:"Initial Line of Credit", val:0}
+		, mortgageInsurance:{desc:"Mortgage Insurance", val:0.51}
+
+		////////////////////////////////////////////////
+		//Other values I don't understand..
+		//		var monthlyPayment			= 0.00;
+		//		var monthlyServiceFee		= 0.00;
+		//		var lifeExpectSetaside		= 0.00;  //??
+		//		var LESASemiAnDisp			= 0.00; //??
+		/////////////////////////////////////////
+	};
+
+	var chartData={
+		  year:{head:"Year", val:
+			function(d, record=true) {
+				//current year doesn't matter for graphing.
+				//only used as X axis..
+				this.data.push(d);
+				return d;
+			},data:[]
+			,format:d3.format(".0f")
+			}
+		, mip:{head:"MIP"
+			, val:function(d, record=false) {
+				var r=0;
+				if(d>0) {
+					r = calcData.curLoanBalance.val
+					* initialData.mortgageInsurance.val/100.0;
+				}
+				if(record)
+					this.data.push(r);
+				return r;
+			},data:[]
+			,format:d3.format(",.2f")
+			,color:"orange"
+			}
+		, rate:{head:"Rate"
+			, val:function(d, record=false) {
+				var r = initialData.initInterestRate.val;
+				//TODO: set rate at any given year
+				if(record)
+					this.data.push(r);
+				return r;
+			},data:[]
+			,format:d3.format(".4f")
+			,color:"salmon"
+			}
+		, interest:{head:"Interest"
+			, val:function(d, record = false) {
+				var r=0
+				if(d>0)
+				{
+					r = calcData.curLoanBalance.val
+						* chartData.rate.val(d)/100;
+				}
+				if(record)
+					this.data.push(r);
+				return r;
+			},data:[]
+			,format:d3.format(",.2f")
+			,color:"purple"
+			}
+		, loc:{
+			  head:"LoC"
+			, val:function(d,record=false) {
+				var r = 0;
+				if(record)
+					this.data.push(r);
+				return r;
+			},data:[]
+			,format:d3.format(",.2f")
+			,color:"darkgreen"
+			}
+		, loanBalance:{
+			  head:"Loan Balance"
+			, val:function(d, record=false) {
+				var r = calcData.curLoanBalance.val
+					+ chartData.mip.val(d) 	//MIP
+					+ chartData.interest.val(d)	//Interest
+					;
+				if(record)
+					this.data.push(r);
+				return r;
+			},data:[]
+			,format:d3.format(",.2f")
+			,color:"red"
+			}
+		, propVal:{
+			head:"Property Val"
+			, val:function(d,record=false) {
+				var r = initialData.initPropValue.val;
+				if(d>0)
+				{
+					r = calcData.curPropValue.val
+						*(1.0 + initialData.expectedAppreciation.val/100.0);
+				}
+				if(record)
+					this.data.push(r);
+				return r;
+			},data:[]
+			,format:d3.format(",.2f")
+			,color:"blue"
+			}
+		, equity:{head:"Equity"
+			, val:function(d,record=false) {
+				var r = initialData.initPropValue.val
+						- calcData.begMortgageBalance.val;
+				if(d>0)
+					r = chartData.propVal.val(d)
+						- chartData.loanBalance.val(d);
+				if(record)
+					this.data.push(r);
+				return r;
+			},data:[]
+			,format:d3.format(",.2f")
+			,color:"green"
+			}
+	};
+	////////////////////////////////////////////////////////////////////////////////
+	//TODO: these are calculated initial values; need to put into an object and display
+	//calculated stuff
+	var calcData={
+		curPropValue:{
+			  desc:"Property Value"
+			, val:0
+			, setInitialVal:function(){
+					return initialData.initPropValue.val;
+				}
+			}
+		, begMortgageBalance:{
+			  desc:"Beginning Mortgage Balance"
+			, val:0
+			, setInitialVal:function(){
+					return initialData.lienPayoffsWRM.val
+					+ initialData.financedClosingCosts.val
+					- initialData.cashDueFromBorrower.val;
+				}
+			}
+		, initialPrincipalLim:{
+			  desc:"Initial Principal Limit"
+			, val:0
+			, setInitialVal:function(){
+					return calcData.begMortgageBalance.val;
+				}
+			}
+		, curLoanBalance:{
+			  desc:"Loan Balance"
+			, val:0
+			, setInitialVal:function(){
+					return calcData.begMortgageBalance.val;
+				}
+			}
+	}
+	
+	// Drawing stuff
+	//Root element; not much savings in code...
+	var root = d3.select("body");
+	
+	/////////////////////////////////////////////
+	//Now the data to put into the table
+	/////////////////////////////////////////////
+	//Create arrays from the data objects.
+	var cd =[];	//Chart data
+	for (var key in chartData) {
+	   if (chartData.hasOwnProperty(key)) {
+		  var obj = chartData[key];
+		  cd.push(obj);
+		  /* Probably is more robust to check properties:
+		  for (var prop in obj) {
+			 if (obj.hasOwnProperty(prop)) {
+				//dd.push(0);
+				//alert(prop + " = " + obj[prop]);
+			 }
+		  }
+		  */
+	   }
+	}
+	var ccd =[];//Calculated Data
+	for (var key in calcData) {
+	   if (calcData.hasOwnProperty(key)) {
+		  var obj = calcData[key];
+		  ccd.push(obj);
+	   }
+	}
+	
+	///////////////////////////////////////////////////
+		// set the dimensions and margins of the graph
+	var margin = {top: 10, right: 30, bottom: 30, left: 60},
+		width  = 460 - margin.left - margin.right,
+		height = 400 - margin.top - margin.bottom;
+	
+	// append the svg object to the body of the page
+	var svg = d3.select("#graph")
+	  .append("svg")
+		.attr("width", width + margin.left + margin.right)
+		.attr("height", height + margin.top + margin.bottom)
+	  .append("g")
+		.attr("transform",
+			  "translate(" + margin.left + "," + margin.top + ")");
+	
+	/////////////////////////////////////////////////
+	/* Loading JSON data only works when served from a webserver */
+	//TODO: switch if to load external/local json
+	/*
+	d3.json("/data/amortdata.json").then(function(d) {
+		
+		// Setup default values based on JSON 
+		fillInitialValueFields(d);
+		myFunction();	//do the thing.
+	});
+	*/
+	//Instead data is stored externally as a JSON 
+	fillInitialValueFields(amortdata);
+	myFunction();
+	//TODO: Handle error
+	//TODO: Load data from static/page initial values
+	//.onerror(function(err){ return console.warn(err}));
+	///////////////////////////////////////////////////
+	////////////////////Now all functions
+	
+	//This just puts values into the input boxes.
+	function fillInitialValueFields(dat){
+		//TODO: This can be generated automatically from 'initialData' object
+		d3.select("#numYears")
+			.attr("placeholder", dat.numYears);
+
+		d3.select("#initInterestRate")
+			.attr("placeholder", dat.initInterestRate);
+
+		d3.select("#maxClaimAmount")
+			.attr("placeholder", dat.maxClaimAmount);
+
+		d3.select("#cashDueFromBorrower")
+			.attr("placeholder", dat.cashDueFromBorrower);
+
+		d3.select("#lienPayoffsWRM")
+			.attr("placeholder", dat.lienPayoffsWRM);
+
+		d3.select("#financedClosingCosts")
+			.attr("placeholder", dat.financedClosingCosts);
+
+		d3.select("#initPropValue")
+			.attr("placeholder", dat.initPropValue);
+
+		d3.select("#expectedAppreciation")
+			.attr("placeholder", dat.expectedAppreciation);
+
+		d3.select("#initLineOfCredit")
+			.attr("placeholder", dat.initLineOfCredit);
+
+		d3.select("#mortgageInsurance")
+			.attr("placeholder", dat.mortgageInsurance);
+	}
+	
+	function getInputVal(inputbox){
+		var val = inputbox.property("value");
+		if(!val)
+			val = inputbox.property("placeholder");
+		return val;
+	}
+	function setInitialValues(){
+		//to grab data from input boxes:
+		initialData.numYears.val = parseFloat(getInputVal(d3.select("#numYears")));
+		initialData.initInterestRate.val =parseFloat(getInputVal(d3.select("#initInterestRate")));
+		initialData.maxClaimAmount.val = parseFloat(getInputVal(d3.select("#maxClaimAmount")));
+		initialData.cashDueFromBorrower.val = parseFloat(getInputVal(d3.select("#cashDueFromBorrower")));
+		initialData.lienPayoffsWRM.val =parseFloat(getInputVal(d3.select("#lienPayoffsWRM")));
+		initialData.financedClosingCosts.val = parseFloat(getInputVal(d3.select("#financedClosingCosts")));
+		initialData.initPropValue.val = parseFloat(getInputVal(d3.select("#initPropValue")));
+		initialData.expectedAppreciation.val =parseFloat(getInputVal(d3.select("#expectedAppreciation")));
+		initialData.initLineOfCredit.val = parseFloat(getInputVal(d3.select("#initLineOfCredit")));
+		initialData.mortgageInsurance.val = parseFloat(getInputVal(d3.select("#mortgageInsurance")));
+		
+		calcData.begMortgageBalance.val= calcData.begMortgageBalance.setInitialVal();
+		calcData.initialPrincipalLim.val=calcData.initialPrincipalLim.setInitialVal();
+		calcData.curLoanBalance.val=calcData.curLoanBalance.setInitialVal();
+		calcData.curPropValue.val=calcData.curPropValue.setInitialVal();
+		
+		//Fill values into Initial Values 
+		var tab = root.select("#initialvals").append("p")
+			.append("div").attr("id","calcValues")
+			.append("table")
+			.selectAll("tr")
+			.data(ccd)
+			.enter()
+			.append("tr");
+		tab
+			.append("td")
+			.text(function (d, i) {
+				return d.desc;
+			});
+		tab
+			.append("td")
+			.text(function (d, i) {
+				return d.val;
+			});
+	}
+	
+	function clearAll() {	//Clears the chart and graph
+		svg.selectAll("*").remove();
+		
+		cd.forEach(function(d, i) { d.data = []; });
+		
+		d3.select("#datachart").remove();
+		d3.select("#calcValues").remove();
+		//todo: remove chart
+		//todo: reset initial values
+	}
+	
+	function setGraphScale() {
+		//TODO: Set graph scale dynamically based on data
+		//Setup graph scales
+		x = d3.scaleLinear()
+		  .domain([0, initialData.numYears.val])
+		  .range([ 0, width ]);
+		svg.append("g")
+			.attr("transform", "translate(0," + height + ")")
+			.call(d3.axisBottom(x));
+		y = d3.scaleLinear()
+		  .domain([0, 2000000])//TODO: Use something dynamic..
+		  .range([ height, 0 ]);
+		svg.append("g")
+		  .call(d3.axisLeft(y));
+		  
+		/*		Code snippet to calculate this more dynamically:
+		function scaleX (dat) {
+			var x = d3.scaleLinear()
+			  .domain(d3.extent(dat, function(d) { return d.key; }))
+			  .range([ 0, width ]);
+			return x;
+		}
+		function scaleY (dat){
+			// Add Y axis
+			var y = d3.scaleLinear()
+			  .domain([0, d3.max(dat, function(d) { return +d.val; })])
+			  .range([ height, 0 ]);
+			return y;
+		}
+		*/
+	}
+	function myFunction() {
+		//Clear everything
+		clearAll();
+		//Get initial values
+		setInitialValues();
+		////// Chart
+		//Draw the chart
+		createChart();
+		
+		///// Graph
+		//Scales on graph
+		setGraphScale();
+		//Draw graph lines
+		drawGraph(chartData.mip.data, chartData.mip.color);
+		drawGraph(chartData.propVal.data, chartData.propVal.color);
+		drawGraph(chartData.equity.data, chartData.equity.color);
+		drawGraph(chartData.loanBalance.data,chartData.loanBalance.color);
+		drawGraph(chartData.interest.data, chartData.interest.color);
+	}
+	
+	
+	function createChart(){	//Draws the data table
+		//TODO: Should data be grouped using 'nest' or similar?
+		var tr = root.select(".wrapper")
+				.append("div").attr("class","rightcol")
+				.append("table")
+				.attr("class", "t1")
+				.attr("id", "datachart")
+				.append("thead")
+				.attr("class", "head");
+		//The header
+		var th = tr.selectAll("#head")
+				.data(cd)
+				.enter()
+				.append("th");
+		th.text(function (d, i) {
+					return d.head;
+				});
+		th.style("background-color",function(d){return d.color;});
+				root.select("#datachart").append("tbody");
+		
+		//Generate the data
+		for(var i = 0; i<=initialData.numYears.val; i++)
+		{
+			var tr2 = root
+				.select("#datachart").select("tbody")
+				.append("tr");
+			var td2 = tr2.selectAll("td")
+				.data(cd)
+				.enter()
+				.append("td")
+				.text(function (d) {
+					//console.log(d);
+					return d.format(d.val(i, true));//record this data
+				});
+			///////////////////////////////////////
+			//update values
+			calcData.curLoanBalance.val = chartData.loanBalance.val(i);
+			calcData.curPropValue.val =	chartData.propVal.val(i)
+			///////////////////////////////////////
+		}
+	}
+
+	/**
+	Draws one line per data element
+	*/
+	function drawGraph (dat, color="orange") {
+		//Currently draws one line each pass
+		//Assumes graph has already been scaled
+		//var x = scaleX(dat);
+		//var y = scaleY(dat);
+
+		// Add the line
+		svg.append("path")
+		  .datum(dat)
+		  .attr("fill", "none")
+		  .attr("class", "line")
+		  .attr("stroke", color)
+		  .attr("d", d3.line()
+			.x(function(d, i) { return x(i); })
+			.y(function(d, i) { return y(dat[i]); })
+			);
+	}
+</script>
+</div>
+</body>
+</html>
