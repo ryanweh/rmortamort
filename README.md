@@ -26,4 +26,5 @@ Some changes will be needed to make the project worthy of live deployment.
 Big thanks to:
 * https://www.d3-graph-gallery.com/line.html
 * https://www.tutorialsteacher.com/d3js
-...for helping to learn D3 and providing usable examples to work from, and 
+
+...for helping to learn D3 and providing usable examples to work from

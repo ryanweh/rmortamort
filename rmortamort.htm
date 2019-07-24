@@ -5,13 +5,8 @@
 	<script src="./data/amortdata.json"></script>
 	
 	<script src="./data/privatedata.json"></script>
-	<style>
-		.line {
-			fill:none;
-			stroke-width:1px;
-		}		
+	<style>	
 		table.t1 {
-		
 			font-size: 12px;
 			margin: 1em auto;
 			border: 1px solid #70b0e0;
@@ -55,6 +50,18 @@
 		}
 		.rightcol {
 			margin-left:450px;
+		}
+		
+		.line {
+			fill:none;
+			stroke-width:1px;
+		}	
+		.grid line {
+			stroke: lightgrey;
+			opacity: 0.7;
+		}
+		.grid path {
+			  stroke-width: 0;
 		}
 	</style>
 </head>
@@ -485,13 +492,24 @@
 		//todo: remove chart
 		//todo: reset initial values
 	}
-	
+	// gridlines in x axis function
+	function make_x_gridlines() {		
+		return d3.axisBottom(x)
+			.ticks()
+	}
+	// gridlines in y axis function
+	function make_y_gridlines() {		
+		return d3.axisLeft(y)
+			.ticks()
+	}
+
 	function setGraphScale() {
 		//TODO: Set graph scale dynamically based on data
 		//Setup graph scales
 		x = d3.scaleLinear()
 		  .domain([0, initialData.numYears.val])
 		  .range([ 0, width ]);
+		  x.ticks();
 		svg.append("g")
 			.attr("transform", "translate(0," + height + ")")
 			.call(d3.axisBottom(x));
@@ -500,6 +518,25 @@
 		  .range([ height, 0 ]);
 		svg.append("g")
 		  .call(d3.axisLeft(y));
+	
+
+
+		// add the X gridlines
+		svg.append("g")			
+			  .attr("class", "grid")
+			  .attr("transform", "translate(0," + height + ")")
+			  .call(make_x_gridlines()
+				  .tickSize(-height)
+				  .tickFormat("")
+			  );
+		
+		// add the Y gridlines
+		svg.append("g")			
+			  .attr("class", "grid")
+			  .call(make_y_gridlines()
+				  .tickSize(-width)
+				  .tickFormat("")
+			  );
 		  
 		/*		Code snippet to calculate this more dynamically:
 		function scaleX (dat) {
@@ -529,6 +566,9 @@
 		///// Graph
 		//Scales on graph
 		setGraphScale();
+		
+		
+		
 		//Draw graph lines
 		drawGraph(chartData.mip.data, chartData.mip.color);
 		drawGraph(chartData.propVal.data, chartData.propVal.color);
