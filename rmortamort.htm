@@ -3,6 +3,8 @@
 <head>
 	<script src="./d3/d3.js"></script>
 	<script src="./data/amortdata.json"></script>
+	
+	<script src="./data/privatedata.json"></script>
 	<style>
 		.line {
 			fill:none;
@@ -379,8 +381,15 @@
 		myFunction();	//do the thing.
 	});
 	*/
-	//Instead data is stored externally as a JSON 
-	fillInitialValueFields(amortdata);
+	//Instead initial condition data is stored externally as a JSON variable
+	var data;
+	try {	//Load private initial values if they exist
+		data = privatedata;
+	}
+	catch(error) {	//otherwise load basic values
+		data = amortdata;
+	}
+	fillInitialValueFields(data);
 	myFunction();
 	//TODO: Handle error
 	//TODO: Load data from static/page initial values

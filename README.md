@@ -6,7 +6,7 @@ A learning project for D3.js, this simple page will calculate, chart, and graph 
 
 Everything is local HTML and Javascript, so you do not need a web server to view.  The d3.js library is included and is a fairly recent version of d3 as of the initial commit.  The three pieces to view the page are the data/amortdata.json file, and the d3/d3.js file, and the rmortamort.htm file itself.
 
-The data/amortdata.json file is gitignored, so you can make changes to it to load your own initial conditions.
+The data/privatedata.json file is gitignored, if you copy amortdata.json to this file, values in it will be used so you can load your own initial conditions without them being pushed back into the repository.
 
 ### Prerequisites
 
@@ -18,12 +18,12 @@ Some changes will be needed to make the project worthy of live deployment.
 
 ## Authors
 
-* **Ryan Weh** - *Initial work* - [](https://github.com/ryanweh)
+* **Ryan Weh** (https://github.com/ryanweh)
 
 
 ## Acknowledgments
 
-* Big thanks to:
-** https://www.d3-graph-gallery.com/line.html
-** https://www.tutorialsteacher.com/d3js
+Big thanks to:
+* https://www.d3-graph-gallery.com/line.html
+* https://www.tutorialsteacher.com/d3js
 ...for helping to learn D3 and providing usable examples to work from, and 
