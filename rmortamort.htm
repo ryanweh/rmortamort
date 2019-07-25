@@ -168,6 +168,7 @@
 	</div>
 	
 	<script>
+		
 	var initialData = {
 		  numYears:{desc:"Number of Years", val:40}
 		, initInterestRate:{desc:"Interest Rate", val:4.0000}
@@ -188,125 +189,180 @@
 		//		var LESASemiAnDisp			= 0.00; //??
 		/////////////////////////////////////////
 	};
-
+//37 yrs 100,000 -> 800,000
+						
 	var chartData={
-		  year:{head:"Year", val:
-			function(d, record=true) {
+		  year:{head:"Year"				//Human-friendly title for this
+			, val:function(d, record=true) {
 				//current year doesn't matter for graphing.
 				//only used as X axis..
+				this.curVal = d;
 				this.data.push(d);
-				return d;
-			},data:[]
-			,format:d3.format(".0f")
+				return this.curVal;
+				}
+			, data:[]					// Array of data values
+			, format:d3.format(".0f")	// How to display
+			, curVal:0					// Currently calculated value
 			}
 		, mip:{head:"MIP"
 			, val:function(d, record=false) {
-				var r=0;
-				if(d>0) {
-					r = calcData.curLoanBalance.val
-					* initialData.mortgageInsurance.val/100.0;
+				if(d>0) {	//initialize
+					this.curVal = chartData.loanBalance.curVal
+						* initialData.mortgageInsurance.val/100.0;
 				}
 				if(record)
-					this.data.push(r);
-				return r;
-			},data:[]
-			,format:d3.format(",.2f")
-			,color:"orange"
+					this.data.push(this.curVal);
+				return this.curVal;
+				}
+			, data:[]
+			, format:d3.format(",.2f")
+			, color:"orange"
+			, curVal:0.0
 			}
 		, rate:{head:"Rate"
 			, val:function(d, record=false) {
-				var r = initialData.initInterestRate.val;
+				if(d==0)
+				{
+					this.curVal = initialData.initInterestRate.val;
+				}
+				else if(d>0)
+				{
+					var b = changeData.interestRate.find(
+						function(dat){return dat.year==d})
+					
+					if(b!=null){
+						this.curVal = b.val;
+					}	
+				}
+				
 				//TODO: set rate at any given year
 				if(record)
-					this.data.push(r);
-				return r;
-			},data:[]
-			,format:d3.format(".4f")
-			,color:"salmon"
+					this.data.push(this.curVal);
+				return this.curVal;
+				}
+			, data:[]
+			, format:d3.format(".4f")
+			, color:"salmon"
+			, curVal:0.0
 			}
 		, interest:{head:"Interest"
 			, val:function(d, record = false) {
-				var r=0
 				if(d>0)
 				{
-					r = calcData.curLoanBalance.val
-						* chartData.rate.val(d)/100;
+					this.curVal = 
+						  chartData.loanBalance.curVal
+						* chartData.rate.curVal/100;
 				}
 				if(record)
-					this.data.push(r);
-				return r;
-			},data:[]
-			,format:d3.format(",.2f")
-			,color:"purple"
+					this.data.push(this.curVal);
+				return this.curVal;
+				}
+			, data:[]
+			, format:d3.format(",.2f")
+			, color:"purple"
+			, curVal:0.0
 			}
 		, loc:{
 			  head:"LoC"
-			, val:function(d,record=false) {
-				var r = 0;
+			, val:function(d, record=false) {
+				if(d>0)
+				{
+					var b = changeData.loc.find(
+						function(dat){return dat.year==d});
+					
+					if(b!=null){
+						this.curVal += b.val;
+					}	
+				}
+				
+				//TODO: set rate at any given year
 				if(record)
-					this.data.push(r);
-				return r;
-			},data:[]
-			,format:d3.format(",.2f")
-			,color:"darkgreen"
+					this.data.push(this.curVal);
+				return this.curVal;
+				}
+			, data:[]
+			, format:d3.format(",.2f")
+			, color:"darkgreen"
+			, curVal:0.0
 			}
 		, loanBalance:{
 			  head:"Loan Balance"
 			, val:function(d, record=false) {
-				var r = calcData.curLoanBalance.val
-					+ chartData.mip.val(d) 	//MIP
-					+ chartData.interest.val(d)	//Interest
-					;
-				if(record)
-					this.data.push(r);
-				return r;
-			},data:[]
-			,format:d3.format(",.2f")
-			,color:"red"
-			}
-		, propVal:{
-			head:"Property Val"
-			, val:function(d,record=false) {
-				var r = initialData.initPropValue.val;
-				if(d>0)
+				if(d==0)
 				{
-					r = calcData.curPropValue.val
-						*(1.0 + initialData.expectedAppreciation.val/100.0);
+					this.curVal =  calcData.begMortgageBalance.val;
+				}
+				else if(d>0)
+				{
+				//Did we pay in?
+					var p = 0;
+					var b = changeData.loc.find(
+						function(dat){return dat.year==d});
+					
+					if(b!=null){
+						p = b.val;
+					}	
+					this.curVal +=
+						- p
+						+ chartData.mip.curVal 	//MIP
+						+ chartData.interest.curVal	//Interest
+						;
 				}
 				if(record)
-					this.data.push(r);
-				return r;
-			},data:[]
-			,format:d3.format(",.2f")
-			,color:"blue"
+					this.data.push(this.curVal);
+				return this.curVal;
+				}
+			, data:[]
+			, format:d3.format(",.2f")
+			, color:"red"
+			, curVal:0.0
+			}
+		, propVal:{
+			head:"Property Value"
+			, val:function(d, record=false) {
+				if(d==0)
+				{
+					this.curVal = initialData.initPropValue.val;
+				}
+				else if(d>0)
+				{
+					this.curVal *=
+						(1.0 + initialData.expectedAppreciation.val/100.0);
+				}
+				if(record)
+					this.data.push(this.curVal);
+				return this.curVal;
+				}
+			, data:[]
+			, format:d3.format(",.2f")
+			, color:"blue"
+			, curVal:0.0
 			}
 		, equity:{head:"Equity"
 			, val:function(d,record=false) {
-				var r = initialData.initPropValue.val
+				if(d==0)
+				{
+					this.curVal = initialData.initPropValue.val
 						- calcData.begMortgageBalance.val;
-				if(d>0)
-					r = chartData.propVal.val(d)
-						- chartData.loanBalance.val(d);
+				}
+				else if(d>0)
+					this.curVal = chartData.propVal.curVal
+						- chartData.loanBalance.curVal;
 				if(record)
-					this.data.push(r);
-				return r;
-			},data:[]
-			,format:d3.format(",.2f")
-			,color:"green"
+					this.data.push(this.curVal);
+				return this.curVal;
+				}
+			, data:[]
+			, format:d3.format(",.2f")
+			, color:"green"
+			, curVal:0.0
 			}
 	};
 	////////////////////////////////////////////////////////////////////////////////
-	//TODO: these are calculated initial values; need to put into an object and display
+	//TODO: these are calculated initial values; should they be here, or in other objects?
 	//calculated stuff
 	var calcData={
-		curPropValue:{
-			  desc:"Property Value"
-			, val:0
-			, setInitialVal:function(){
-					return initialData.initPropValue.val;
-				}
-			}
-		, begMortgageBalance:{
+		begMortgageBalance:{
 			  desc:"Beginning Mortgage Balance"
 			, val:0
 			, setInitialVal:function(){
@@ -317,13 +373,6 @@
 			}
 		, initialPrincipalLim:{
 			  desc:"Initial Principal Limit"
-			, val:0
-			, setInitialVal:function(){
-					return calcData.begMortgageBalance.val;
-				}
-			}
-		, curLoanBalance:{
-			  desc:"Loan Balance"
 			, val:0
 			, setInitialVal:function(){
 					return calcData.begMortgageBalance.val;
@@ -404,7 +453,9 @@
 	///////////////////////////////////////////////////
 	////////////////////Now all functions
 	
-	//This just puts values into the input boxes.
+	/**
+		This just puts values into the input boxes.
+	*/
 	function fillInitialValueFields(dat){
 		//TODO: This can be generated automatically from 'initialData' object
 		d3.select("#numYears")
@@ -438,12 +489,18 @@
 			.attr("placeholder", dat.mortgageInsurance);
 	}
 	
+	/**
+	*/
 	function getInputVal(inputbox){
 		var val = inputbox.property("value");
 		if(!val)
 			val = inputbox.property("placeholder");
 		return val;
 	}
+	
+	/**
+		Sets initial values for all data
+	*/
 	function setInitialValues(){
 		//to grab data from input boxes:
 		initialData.numYears.val = parseFloat(getInputVal(d3.select("#numYears")));
@@ -459,9 +516,8 @@
 		
 		calcData.begMortgageBalance.val= calcData.begMortgageBalance.setInitialVal();
 		calcData.initialPrincipalLim.val=calcData.initialPrincipalLim.setInitialVal();
-		calcData.curLoanBalance.val=calcData.curLoanBalance.setInitialVal();
-		calcData.curPropValue.val=calcData.curPropValue.setInitialVal();
-		
+
+		///////////////////////////////////
 		//Fill values into Initial Values 
 		var tab = root.select("#initialvals").append("p")
 			.append("div").attr("id","calcValues")
@@ -482,27 +538,33 @@
 			});
 	}
 	
-	function clearAll() {	//Clears the chart and graph
+	/**
+		Clears the chart and graph
+	*/
+	function clearAll() {	
 		svg.selectAll("*").remove();
 		
 		cd.forEach(function(d, i) { d.data = []; });
 		
 		d3.select("#datachart").remove();
 		d3.select("#calcValues").remove();
-		//todo: remove chart
-		//todo: reset initial values
 	}
-	// gridlines in x axis function
+	/**
+		gridlines in x axis function
+	*/
 	function make_x_gridlines() {		
 		return d3.axisBottom(x)
 			.ticks()
 	}
-	// gridlines in y axis function
-	function make_y_gridlines() {		
+	/**
+		gridlines in y axis function
+	*/	function make_y_gridlines() {		
 		return d3.axisLeft(y)
 			.ticks()
 	}
-
+	
+	/**
+	*/
 	function setGraphScale() {
 		//TODO: Set graph scale dynamically based on data
 		//Setup graph scales
@@ -518,8 +580,6 @@
 		  .range([ height, 0 ]);
 		svg.append("g")
 		  .call(d3.axisLeft(y));
-	
-
 
 		// add the X gridlines
 		svg.append("g")			
@@ -554,6 +614,10 @@
 		}
 		*/
 	}
+	
+	/**
+		This calls the chart and graph functions.
+	*/
 	function myFunction() {
 		//Clear everything
 		clearAll();
@@ -567,8 +631,6 @@
 		//Scales on graph
 		setGraphScale();
 		
-		
-		
 		//Draw graph lines
 		drawGraph(chartData.mip.data, chartData.mip.color);
 		drawGraph(chartData.propVal.data, chartData.propVal.color);
@@ -577,7 +639,9 @@
 		drawGraph(chartData.interest.data, chartData.interest.color);
 	}
 	
-	
+	/**
+		Draws the data chart
+	*/
 	function createChart(){	//Draws the data table
 		//TODO: Should data be grouped using 'nest' or similar?
 		var tr = root.select(".wrapper")
@@ -599,6 +663,7 @@
 				root.select("#datachart").append("tbody");
 		
 		//Generate the data
+		//TODO: we should be able to do this without a for loop
 		for(var i = 0; i<=initialData.numYears.val; i++)
 		{
 			var tr2 = root
@@ -611,12 +676,7 @@
 				.text(function (d) {
 					//console.log(d);
 					return d.format(d.val(i, true));//record this data
-				});
-			///////////////////////////////////////
-			//update values
-			calcData.curLoanBalance.val = chartData.loanBalance.val(i);
-			calcData.curPropValue.val =	chartData.propVal.val(i)
-			///////////////////////////////////////
+			});
 		}
 	}
 

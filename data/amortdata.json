@@ -1,12 +1,23 @@
 var amortdata={
-		 "numYears":30
-		,"initInterestRate":3.8
-		,"maxClaimAmount":700000.00
-		,"cashDueFromBorrower":35000.60
-		,"lienPayoffsWRM":450000.00
-		,"financedClosingCosts":26000.00
-		,"initPropValue":800000.00
-		,"expectedAppreciation":3.0
-		,"initLineOfCredit":0
-		,"mortgageInsurance":0.51
+		 numYears:30
+		,initInterestRate:3.8
+		,maxClaimAmount:700000.00
+		,cashDueFromBorrower:35000.60
+		,lienPayoffsWRM:450000.00
+		,financedClosingCosts:26000.00
+		,initPropValue:800000.00
+		,expectedAppreciation:3.0
+		,initLineOfCredit:0
+		,mortgageInsurance:0.51
+}
+
+var changeData={
+	interestRate:[
+		  {year:1,val:4.0}
+		
+		]
+	, LoC:[
+		  {year:2,val:10000}
+		, {year:4,val:20000}
+		]
 }
