@@ -14,10 +14,10 @@ var amortdata={
 var changeData={
 	interestRate:[
 		  {year:1,val:4.0}
-		
 		]
-	, LoC:[
+	, loc:[
 		  {year:2,val:10000}
 		, {year:4,val:20000}
+		, {year:5,val:10000}
 		]
 }

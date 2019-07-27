@@ -65,7 +65,7 @@
 		}
 	</style>
 </head>
-<body>
+<body style="background-color:#eee">
 <h2>Reverse Mortgage Amortization</h2>
 <hr />
 <div class="wrapper">
@@ -75,7 +75,7 @@
 		
 		<div id="initialvals" style="margin-left:55px;">
 			<form>
-				<!--todo: generate this dynamically in d3 script -->
+				<!--todo: generate this dynamically from initialData object -->
 				<strong>Initial Values</strong><br />
 				<hr />
 				<table>
@@ -189,7 +189,6 @@
 		//		var LESASemiAnDisp			= 0.00; //??
 		/////////////////////////////////////////
 	};
-//37 yrs 100,000 -> 800,000
 						
 	var chartData={
 		  year:{head:"Year"				//Human-friendly title for this
@@ -274,8 +273,6 @@
 						this.curVal += b.val;
 					}	
 				}
-				
-				//TODO: set rate at any given year
 				if(record)
 					this.data.push(this.curVal);
 				return this.curVal;
@@ -421,10 +418,19 @@
 	var svg = d3.select("#graph")
 	  .append("svg")
 		.attr("width", width + margin.left + margin.right)
-		.attr("height", height + margin.top + margin.bottom)
-	  .append("g")
+		.attr("height", height + margin.top + margin.bottom);
+	  
+	  svg
+		.append("rect")
+		.attr("width", "100%")
+		.attr("height", "100%")
+		.attr("fill", "#eeeeee")
+		
+	svg = svg
+		.append("g")
 		.attr("transform",
 			  "translate(" + margin.left + "," + margin.top + ")");
+
 	
 	/////////////////////////////////////////////////
 	/* Loading JSON data only works when served from a webserver */
@@ -438,13 +444,8 @@
 	});
 	*/
 	//Instead initial condition data is stored externally as a JSON variable
-	var data;
-	try {	//Load private initial values if they exist
-		data = privatedata;
-	}
-	catch(error) {	//otherwise load basic values
-		data = amortdata;
-	}
+	//Note that a privatedata.json file will be loaded second and override the amortdata.json file.
+	var data = amortdata;
 	fillInitialValueFields(data);
 	myFunction();
 	//TODO: Handle error
