@@ -90,6 +90,8 @@
 	var initialData = {
 		  numYears:{desc:"Number of Years", val:40, id:"numYears"}
 		, initInterestRate:{desc:"Interest Rate", val:4.0000, id:"initInterestRate"}
+		, initStdInterestRate:{desc:"Standard Interest Rate", val:4.0000, id:"initStdInterestRate"}
+		, initStdMortPay:{desc:"Standard Payment", val:10000, id:"initStdMortPay"}
 		, maxClaimAmount:{desc:"Max claim amount", val:200000.00, id:"maxClaimAmount"}
 		, cashDueFromBorrower:{desc:"Cash Due From Borrower", val:30000.00, id:"cashDueFromBorrower"}
 		, lienPayoffsWRM:{desc:"Lien Payoffs w/Reverse Mort.", val:400000.00, id:"lienPayoffsWRM"}
@@ -284,6 +286,29 @@
 			, color:"green"
 			, curVal:0.0
 			}
+		, stdMort:{head:"Std. Mortgage"
+			, val:function(d,record=false) {
+				if(d==0)
+				{
+					this.curVal = calcData.begMortgageBalance.val;
+				}
+				else if(d>0)
+				{
+					this.curVal = this.curVal 
+						*(1+ initialData.initStdInterestRate.val/100)
+						- initialData.initStdMortPay.val;
+					if(this.curVal<0)
+						this.curVal = 0.0;
+				}
+				if(record)
+					this.data.push(this.curVal);
+				return this.curVal;
+				}
+			, data:[]
+			, format:d3.format(",.2f")
+			, color:"black"
+			, curVal:0.0
+			}
 	};
 	////////////////////////////////////////////////////////////////////////////////
 	//TODO: these are calculated initial values; should they be here, or in other objects?
@@ -398,7 +423,6 @@
 			})
 			.attr("type","float")
 			.attr("placeholder",function (d) {
-				//console.log(d);
 				return d.val;
 			});
 		
@@ -451,7 +475,7 @@
 	function setInitialValues(){
 
 		initd.forEach(function(b){
-			b.val = parseFloat(getInputVal(d3.select("#"+b.id)));
+			b.val = parseFloat(getInputVal(d3.select("#" + b.id)));
 		});
 		
 		calcData.begMortgageBalance.val= calcData.begMortgageBalance.setInitialVal();
@@ -577,6 +601,7 @@
 		drawGraph(chartData.equity.data, chartData.equity.color);
 		drawGraph(chartData.loanBalance.data,chartData.loanBalance.color);
 		drawGraph(chartData.interest.data, chartData.interest.color);
+		drawGraph(chartData.stdMort.data, chartData.stdMort.color);
 	}
 	
 	/**

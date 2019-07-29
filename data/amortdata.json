@@ -1,6 +1,8 @@
 var amortdata={
 		 numYears:30
 		,initInterestRate:3.8
+		,initStdInterestRate:3.9
+		,initStdMortPay:30000
 		,maxClaimAmount:700000.00
 		,cashDueFromBorrower:35000.60
 		,lienPayoffsWRM:450000.00
