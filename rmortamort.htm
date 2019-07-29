@@ -73,113 +73,31 @@
 		<!-- Graph will go here -->
 		<div id="graph" ></div>
 		
-		<div id="initialvals" style="margin-left:55px;">
-			<form>
+		<form>
+				<div id="initialvals" style="margin-left:55px;">
+
 				<!--todo: generate this dynamically from initialData object -->
 				<strong>Initial Values</strong><br />
 				<hr />
-				<table>
-				<tbody>
-					<tr>
-						<td>
-							Number of Years:
-						</td><td>
-							<input class="fields" id="numYears" type="float"/>
-						</td>
-					</tr>
-					<tr>
-						<td>
-							Initial Interest Rate: 
-						</td><td>
-							<input class="fields" id="initInterestRate" type="float"/>
-						</td>
-					</tr>
-					<tr>
-						<td>
-							Max Claim Amount:
-						</td>
-						<td>
-							<input class="fields" id="maxClaimAmount" type="float"/>
-						</td>
-					</tr>
-					<tr>
-						<td>
-							Cash Due from Borrower:
-						</td>
-						<td>
-							<input class="fields" id="cashDueFromBorrower" type="float"/>
-						</td>
-					</tr>
-					<tr>
-						<td>
-							Lien Payoffs w/RMortgage:
-						</td>
-						<td>
-							<input class="fields" id="lienPayoffsWRM" type="float"/><br />
-						</td>
-					</tr>
-
-					<tr>
-						<td>
-							Financed Closing Costs:
-						</td>
-						<td>
-							<input class="fields" id="financedClosingCosts" type="float"/>
-						</td>
-					</tr>
-					<tr>
-						<td>
-							Initial Property Value:
-						</td>
-						<td>
-							<input class="fields" id="initPropValue" type="float"/>
-						</td>
-					</tr>
-					<tr>
-						<td>
-							Expected Appreciation:
-						</td>
-						<td>
-							<input class="fields" id="expectedAppreciation" type="float"/>
-						</td>
-					</tr>
-					<tr>
-						<td>
-							Initial Line of Credit:
-						</td>
-						<td>
-							<input class="fields" id="initLineOfCredit" type="float"/>
-						</td>
-					</tr>
-					<tr>
-						<td>
-							Mortgage Insurance Rate: 
-						</td>
-						<td>
-							<input class="fields" id="mortgageInsurance" type="float"/>
-						</td>
-					</tr>
-					</tbody>
-				</table>
 				<div style="margin-left:185px;" >
 					<input type="submit" onclick="myFunction(); return false;"/>
 				</div>
-			</form>
-	</div>
+			</div>
+		</form>
 	
 	<script>
 		
 	var initialData = {
-		  numYears:{desc:"Number of Years", val:40}
-		, initInterestRate:{desc:"Interest Rate", val:4.0000}
-		, maxClaimAmount:{desc:"Max claim amount", val:200000.00}
-		, cashDueFromBorrower:{desc:"Cash Due From Borrower", val:30000.00}
-		, lienPayoffsWRM:{desc:"Lien Payoffs w/Reverse Mort.", val:400000.00}
-		, financedClosingCosts:{desc:"Financed Closing Costs", val:25000.25}
-		, initPropValue:{desc:"Initial Property Value", val:800000.00}
-		, expectedAppreciation:{desc:"Expected Appreciation", val:3.0}
-		, initLineOfCredit:{desc:"Initial Line of Credit", val:0}
-		, mortgageInsurance:{desc:"Mortgage Insurance", val:0.51}
+		  numYears:{desc:"Number of Years", val:40, id:"numYears"}
+		, initInterestRate:{desc:"Interest Rate", val:4.0000, id:"initInterestRate"}
+		, maxClaimAmount:{desc:"Max claim amount", val:200000.00, id:"maxClaimAmount"}
+		, cashDueFromBorrower:{desc:"Cash Due From Borrower", val:30000.00, id:"cashDueFromBorrower"}
+		, lienPayoffsWRM:{desc:"Lien Payoffs w/Reverse Mort.", val:400000.00, id:"lienPayoffsWRM"}
+		, financedClosingCosts:{desc:"Financed Closing Costs", val:25000.25, id:"financedClosingCosts"}
+		, initPropValue:{desc:"Initial Property Value", val:800000.00, id:"initPropValue"}
+		, expectedAppreciation:{desc:"Expected Appreciation", val:3.0, id:"expectedAppreciation"}
+		, initLineOfCredit:{desc:"Initial Line of Credit", val:0, id:"initLineOfCredit"}
+		, mortgageInsurance:{desc:"Mortgage Insurance", val:0.51, id:"mortgageInsurance"}
 
 		////////////////////////////////////////////////
 		//Other values I don't understand..
@@ -205,7 +123,11 @@
 			}
 		, mip:{head:"MIP"
 			, val:function(d, record=false) {
-				if(d>0) {	//initialize
+				if(d==0)
+				{
+					this.curVal = 0.0;
+				}
+				else if(d>0) {	//initialize
 					this.curVal = chartData.loanBalance.curVal
 						* initialData.mortgageInsurance.val/100.0;
 				}
@@ -246,7 +168,11 @@
 			}
 		, interest:{head:"Interest"
 			, val:function(d, record = false) {
-				if(d>0)
+				if(d==0)
+				{
+					this.curVal = 0.0;
+				}
+				else if(d>0)
 				{
 					this.curVal = 
 						  chartData.loanBalance.curVal
@@ -264,7 +190,11 @@
 		, loc:{
 			  head:"LoC"
 			, val:function(d, record=false) {
-				if(d>0)
+				if(d==0)
+				{
+					this.curVal =  initialData.initLineOfCredit.val;
+				}
+				else if(d>0)
 				{
 					var b = changeData.loc.find(
 						function(dat){return dat.year==d});
@@ -408,6 +338,14 @@
 	   }
 	}
 	
+	var initd =[];//initial Data
+	for (var key in initialData) {
+	   if (initialData.hasOwnProperty(key)) {
+		  var obj = initialData[key];
+		  initd.push(obj);
+		}
+	}
+	
 	///////////////////////////////////////////////////
 		// set the dimensions and margins of the graph
 	var margin = {top: 10, right: 30, bottom: 30, left: 60},
@@ -420,7 +358,7 @@
 		.attr("width", width + margin.left + margin.right)
 		.attr("height", height + margin.top + margin.bottom);
 	  
-	  svg
+	svg
 		.append("rect")
 		.attr("width", "100%")
 		.attr("height", "100%")
@@ -431,6 +369,39 @@
 		.attr("transform",
 			  "translate(" + margin.left + "," + margin.top + ")");
 
+
+
+	/**
+		Create initial data entry form
+		//This would be best done in Angular
+	*/
+	var ff = root
+		.select("#initialvals")
+		.append("table")
+		.selectAll("tr")
+		.data(initd)
+		.enter()
+		.append("tr");
+		
+	ff//heading
+		.append("th")
+			.text(function (d) {
+				//console.log(d);
+				return d.desc;
+			});
+	ff//form input
+		.append("td")
+			.append("input")
+			.attr("class", "fields")
+			.attr("id",function (d) {
+				return d.id;
+			})
+			.attr("type","float")
+			.attr("placeholder",function (d) {
+				//console.log(d);
+				return d.val;
+			});
+		
 	
 	/////////////////////////////////////////////////
 	/* Loading JSON data only works when served from a webserver */
@@ -445,8 +416,7 @@
 	*/
 	//Instead initial condition data is stored externally as a JSON variable
 	//Note that a privatedata.json file will be loaded second and override the amortdata.json file.
-	var data = amortdata;
-	fillInitialValueFields(data);
+	fillInitialValueFields(initd);//amortdata);
 	myFunction();
 	//TODO: Handle error
 	//TODO: Load data from static/page initial values
@@ -458,36 +428,12 @@
 		This just puts values into the input boxes.
 	*/
 	function fillInitialValueFields(dat){
-		//TODO: This can be generated automatically from 'initialData' object
-		d3.select("#numYears")
-			.attr("placeholder", dat.numYears);
-
-		d3.select("#initInterestRate")
-			.attr("placeholder", dat.initInterestRate);
-
-		d3.select("#maxClaimAmount")
-			.attr("placeholder", dat.maxClaimAmount);
-
-		d3.select("#cashDueFromBorrower")
-			.attr("placeholder", dat.cashDueFromBorrower);
-
-		d3.select("#lienPayoffsWRM")
-			.attr("placeholder", dat.lienPayoffsWRM);
-
-		d3.select("#financedClosingCosts")
-			.attr("placeholder", dat.financedClosingCosts);
-
-		d3.select("#initPropValue")
-			.attr("placeholder", dat.initPropValue);
-
-		d3.select("#expectedAppreciation")
-			.attr("placeholder", dat.expectedAppreciation);
-
-		d3.select("#initLineOfCredit")
-			.attr("placeholder", dat.initLineOfCredit);
-
-		d3.select("#mortgageInsurance")
-			.attr("placeholder", dat.mortgageInsurance);
+		dat.forEach(function(b)
+		{
+		//TODO: is eval a security issue here?
+			d3.select("#"+b.id)
+				.attr("placeholder", eval("amortdata." +b.id));
+		});		
 	}
 	
 	/**
@@ -503,17 +449,10 @@
 		Sets initial values for all data
 	*/
 	function setInitialValues(){
-		//to grab data from input boxes:
-		initialData.numYears.val = parseFloat(getInputVal(d3.select("#numYears")));
-		initialData.initInterestRate.val =parseFloat(getInputVal(d3.select("#initInterestRate")));
-		initialData.maxClaimAmount.val = parseFloat(getInputVal(d3.select("#maxClaimAmount")));
-		initialData.cashDueFromBorrower.val = parseFloat(getInputVal(d3.select("#cashDueFromBorrower")));
-		initialData.lienPayoffsWRM.val =parseFloat(getInputVal(d3.select("#lienPayoffsWRM")));
-		initialData.financedClosingCosts.val = parseFloat(getInputVal(d3.select("#financedClosingCosts")));
-		initialData.initPropValue.val = parseFloat(getInputVal(d3.select("#initPropValue")));
-		initialData.expectedAppreciation.val =parseFloat(getInputVal(d3.select("#expectedAppreciation")));
-		initialData.initLineOfCredit.val = parseFloat(getInputVal(d3.select("#initLineOfCredit")));
-		initialData.mortgageInsurance.val = parseFloat(getInputVal(d3.select("#mortgageInsurance")));
+
+		initd.forEach(function(b){
+			b.val = parseFloat(getInputVal(d3.select("#"+b.id)));
+		});
 		
 		calcData.begMortgageBalance.val= calcData.begMortgageBalance.setInitialVal();
 		calcData.initialPrincipalLim.val=calcData.initialPrincipalLim.setInitialVal();
